@@ -104,9 +104,9 @@ if __name__ == "__main__":
     # Create a state machine object and initialize it
     m = StateMachine()
     p = PhotoCapture()
-    p.config("/images", 640, 480, 'TestFlight1')
+    p.config("images/", 640, 480, 'TestFlight1')
     om = OdmManager()
-    om.config("/images", token, hostname, port)
+    om.config("images/*", token, hostname, port)
     drone = System()
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())

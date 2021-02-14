@@ -20,7 +20,7 @@ class OdmManager:
 
     def processImages(self):
         n = Node(self.host, self.port, self.token, self.timeout)
-        task = n.create_task(glob.glob(self.path),{'dsm':True})
+        task = n.create_task(glob.glob(self.pathToImage),{'dsm':True})
         task.wait_for_completion()
         task.download_assets("results")
 

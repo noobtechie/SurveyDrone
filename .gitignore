@@ -130,3 +130,7 @@ dmypy.json
 
 # PyCharm idea files
 .idea
+
+# Result folder
+results/
+

@@ -10,10 +10,12 @@ from mavsdk.mission import (MissionItem, MissionPlan, MissionResult, MissionProg
 from odmmanager import OdmManager
 from auth import (hostname, port, token)
 
+# Checks if the drone is landed and the mission is successful
 async def check_land_position(args):
     if drone.telemetry.landed_state() is MissionResult.Result.SUCCESS:
         return True
 
+# Handler for idle state
 async def idle_state(args):
     print("-- Downloading mission")
     mission_plan = await drone.action.download_mission()
@@ -24,7 +26,7 @@ async def idle_state(args):
         newState = "error_state"
     return (newState, mission_plan)
 
-
+# Handler for start flight state
 async def start_flight_state(args):
     print("-- Starting Mission")
     await drone.mission.start_mission()
@@ -34,6 +36,7 @@ async def start_flight_state(args):
             newState = "photo_capture"
             return (newState, args)
 
+# Checks the progress of mission and takes photos as per mission item
 async def capture_manager(args):
     async for mission_progress in drone.mission.mission_progress():
         if args.camera_action == MissionItem.CameraAction.TAKE_PHOTO:
@@ -42,6 +45,7 @@ async def capture_manager(args):
               f"{mission_progress.current}/"
               f"{mission_progress.total}")
 
+# Handler for photo capture state
 async def photo_capture_state(args):
     async for is_in_air in drone.telemetry.in_air():
         if not is_in_air:
@@ -54,7 +58,7 @@ async def photo_capture_state(args):
         else:
             await capture_manager(args)
 
-
+# Handler for landing state
 async def landing_state(args):
     if check_land_position(args):
         newState = "odm_manager"
@@ -63,16 +67,19 @@ async def landing_state(args):
         print("Mission Failed")
     return (newState, args)
 
+# Wrapped the blocking image processing function with some asyncio magig
 async def wrapped_process_image():
     executor = concurrent.futures.ThreadPoolExecutor()
     await loop.run_in_executor(executor, om.processImages())
 
+# Handler for odm manager state
 async def odm_manager_state(args):
     await wrapped_process_image()
     print("Mission Successful")
     newState = "mission_end"
     return (newState, args)
 
+# Initializes the state machine
 async def init_sm():
     await m.add_state("idle", idle_state)
     await m.add_state("start_flight", start_flight_state)
@@ -104,9 +111,9 @@ if __name__ == "__main__":
     # Create a state machine object and initialize it
     m = StateMachine()
     p = PhotoCapture()
-    p.config("/images", 640, 480, 'TestFlight1')
+    p.config("images/", 640, 480, 'TestFlight1')
     om = OdmManager()
-    om.config("/images", token, hostname, port)
+    om.config("images/*", token, hostname, port)
     drone = System()
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())
